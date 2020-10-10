@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="mapper.AppInfoMapper">
+
+    <insert id="insert">
+    INSERT INTO t_app_info VALUES ( #{id},#{corpName},#{appName},#{appKey},#{appSecret},#{redirectUrl},#{limit},#{description},#{cusId},#{state})
+    </insert>
+    <update id="updateBy">
+        UPDATE t_app_info
+        <set>
+            <if test="corpName!=null and corpName!=''">
+                corpName = #{corpName},
+            </if>
+            <if test="appName!=null and appName!=''">
+                appName = #{appName},
+            </if>
+            <if test="appKey!=null and appKey!=''">
+                appKey = #{appKey},
+            </if>
+            <if test="appSecret!=null and appSecret!=''">
+                appSecret = #{appSecret},
+            </if>
+            <if test="redirectUrl!=null and redirectUrl!=''">
+                redirectUrl = #{redirectUrl},
+            </if>
+            <if test="limit!=null and limit!=''">
+                `limit` = #{limit},
+            </if>
+            <if test="description!=null and description!=''">
+                description = #{description},
+            </if>
+            <if test="cusId!=null and cusId!=''">
+                cusId = #{cusId},
+            </if>
+            <if test="state!=null">
+                state = #{state},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+    <delete id="deleteBy">
+        DELETE FROM t_app_info WHERE id IN
+        <foreach collection="array" open="(" close=")" separator="," item="id">
+            #{id}
+        </foreach>
+    </delete>
+    <select id="queryAll" resultType="pojo.TAppInfo">
+        SELECT * FROM t_app_info
+        <where>
+            <if test="param1!=null and param1!=''">
+                and username like concat ('%',#{param1},'%')
+            </if>
+            <if test="param2!=null">
+                and state=#{param2}
+            </if>
+        </where>
+    </select>
+</mapper>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="mapper.CustomerMapper">
+
+    <insert id="insert">
+    INSERT INTO t_customer VALUES ( #{id},#{username},#{password},#{nickname},#{address},#{money},#{state})
+    </insert>
+    <update id="updateBy">
+        UPDATE t_customer
+        <set>
+            <if test="username!=null and username!=''">
+                username = #{username},
+            </if>
+            <if test="password!=null and password!=''">
+                password = #{password},
+            </if>
+            <if test="nickname!=null and nickname!=''">
+                nickname = #{nickname},
+            </if>
+            <if test="address!=null and address!=''">
+                address = #{address},
+            </if>
+            <if test="money!=null and money!=''">
+                money = #{money},
+            </if>
+            <if test="state!=null">
+                state = #{state},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+    <delete id="deleteBy">
+        DELETE FROM t_customer WHERE id IN
+        <foreach collection="array" open="(" close=")" separator="," item="id">
+            #{id}
+        </foreach>
+    </delete>
+    <select id="querySingle" resultType="pojo.TCustomer">
+
+    </select>
+    <select id="queryAll" resultType="pojo.TCustomer">
+        SELECT * FROM t_customer
+        <where>
+            <if test="param1!=null and param1!=''">
+                and username like concat ('%',#{param1},'%')
+            </if>
+            <if test="param2!=null">
+                and state=#{param2}
+            </if>
+        </where>
+    </select>
+</mapper>

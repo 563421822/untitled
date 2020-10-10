@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="mapper.MenuMapper">
+
+    <select id="queryAll" resultType="pojo.TMenu">
+SELECT tm.* FROM t_menu tm LEFT JOIN t_role_menu tr ON tm.id = tr.menuId LEFT JOIN t_user_role tu ON tr.roldId = tu.roleId LEFT JOIN t_admin_user ta ON tu.userId = ta.id WHERE ta.id = #{id}
+    </select>
+</mapper>

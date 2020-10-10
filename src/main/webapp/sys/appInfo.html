@@ -1,0 +1,381 @@
+<!--搜索提交的表单-->
+<form action="#" class="layui-form">
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label>公司名称:</label>
+            <div class="layui-inline">
+                <input type="text" name="corpName" id="corpName" autocomplete="off" placeholder="输入公司名称"
+                       class="layui-input">
+            </div>
+            公司状态:
+            <div class="layui-inline">
+                <select name="state" id="state">
+                    <option value="0">无效</option>
+                    <option value="1">有效</option>
+                </select>
+            </div>
+            <!--            搜索按钮-->
+            <input type="button" class="layui-btn" id="btn" value="搜索"/>
+        </div>
+    </div>
+</form>
+
+<!--展示所有记录的公共table-->
+<table class="layui-table" lay-filter="customer-table" id="customer-table"></table>
+
+<!--头部的添加和删除的按钮-->
+<script type="text/html" id="customer-head-bar">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm" lay-event="goEdit"><i class="layui-icon">&#xe654;</i>添加</button>
+        <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delete"><i class="layui-icon">&#xe640;</i>删除
+        </button>
+    </div>
+</script>
+
+<!--记录中每行的编辑的script-->
+<script type="text/html" id="customer-customer-bar">
+    <a class="layui-btn layui-btn-xs" lay-event="edit-customer">编辑</a>
+</script>
+
+<!--   主函数,调用渲染和搜索的方法-->
+<script type="text/javascript">
+    $(function () {
+        /*按条件查询*/
+        search();
+
+        /*页面表格渲染*/
+        render();
+    })
+
+    /*搜索的函数*/
+    function search() {
+        $("#btn").click(function () {
+            const corpName = $("#corpName").val();
+            const state = $("#state").val();
+            layui.use('table', function (obj) {
+                /*实例化组件 */
+                const table = layui.table;
+
+                //给table渲染数据
+                table.render({
+                    elem: '#customer-table'
+                    , toolbar: "#customer-head-bar"
+                    , url: 'appInfo/queryAll?corpName=' + corpName + "&state=" + state //数据接口
+                    , page: {'limits': [5, 10, 15, 20, 25]} //开启分页
+                    , cols: [[ //表头
+                        {checkbox: true}
+                        , {field: 'id', title: 'ID'}
+                        , {field: 'corpName', title: '公司名称'}
+                        , {field: 'appName', title: '应用名称'}
+                        , {field: 'appKey', title: '应用标识'}
+                        , {field: 'appSecret', title: '密钥'}
+                        , {field: 'redirectUrl', title: '回滚地址'}
+                        , {field: 'limit', title: '调用接口限制'}
+                        , {field: 'description', title: '描述'}
+                        , {field: 'cusId', title: '客户ID'}
+                        , {
+                            field: 'state', title: '状态', templet: function (data) {
+                                return (data.state === 1) ? '<span class="layui-badge layui-bg-green">有效</span>' : '<span class="layui-badge layui-bg-red">无效</span>'
+                            }
+                        }
+                        //加一列元素--搜索
+                        , {field: 'right', title: '操作', toolbar: '#customer-customer-bar', width: 150}
+                    ]]
+                });
+            })
+        })
+    }
+
+    //渲染数据的函数
+    function render() {
+        layui.use(['table', 'form', 'layer'], function (obj) {
+            /*实例化组件 */
+            const table = layui.table;
+            const form = layui.form;
+            const layer = layui.layer;
+
+            //渲染form表单
+            form.render();
+            //给table渲染数据
+            table.render({
+                elem: '#customer-table'
+                , toolbar: "#customer-head-bar"
+                , url: 'appInfo/queryAll' //数据接口
+                , page: {'limits': [5, 10, 15, 20, 25]} //开启分页
+                , cols: [[ //表头
+                    {checkbox: true}
+                    , {field: 'id', title: 'ID'}
+                    , {field: 'corpName', title: '公司名称'}
+                    , {field: 'appName', title: '应用名称'}
+                    , {field: 'appKey', title: '应用标识'}
+                    , {field: 'appSecret', title: '密钥'}
+                    , {field: 'redirectUrl', title: '回滚地址'}
+                    , {field: 'limit', title: '调用接口限制'}
+                    , {field: 'description', title: '描述'}
+                    , {field: 'cusId', title: '客户ID'}
+                    , {
+                        field: 'state', title: '状态', templet: function (data) {
+                            return (data.state === 1) ? '<span class="layui-badge layui-bg-green">有效</span>' : '<span class="layui-badge layui-bg-red">无效</span>'
+                        }
+                    }
+                    //刚开始的时候在数据库的列名之外加一列元素
+                    , {field: 'right', title: '操作', toolbar: '#customer-customer-bar', width: 150}
+                ]]
+            });
+
+            /*监听行工具栏事件  点击编辑时*/
+            table.on("tool(customer-table)", function (obj) {
+                console.info(obj);
+                const data = obj.data;
+                switch (obj.event) {
+                    case 'edit-customer':
+                        showEditWindow(data);
+                        break;
+                }
+            })
+
+
+            /*监听头工具栏事件
+            * 语法：table.on('event(filter)', callback); 注：event为内置事件名，filter为容器lay-filter设定的值
+            * */
+            table.on("toolbar(customer-table)", function (obj) {
+                switch (obj.event) {
+                    case 'goEdit':
+                        showEditWindow(null);
+                        break;
+                    case 'delete':
+                        /*获取到选中的所有的行的数据*/
+                        const data = table.checkStatus('customer-table').data;
+
+                        if (data.length > 0) {
+                            layer.confirm("确定要删除选中的数据吗", function (index) {
+                                let params = "";
+                                /*遍历data*/
+                                $.each(data, function (i, obj) {
+                                    params += "&id=" + obj.id;
+                                })
+                                /*发送异步请求到后端进行删除的操作*/
+                                $.ajax({
+                                    url: "appInfo/delete",
+                                    type: "post",
+                                    data: params,
+                                    success: function (data) {
+                                        if (data.status) {
+                                            /*刷新表格*/
+                                            table.reload("customer-table", {});
+                                        } else {
+                                            alert(data.message);
+                                        }
+                                        layer.close(index);
+                                    }
+                                })
+                            })
+                        }
+                        break;
+                }
+            })
+        })
+
+        /*这个方法涉及到添加和修改的操作*/
+        function showEditWindow(data) {
+            layer.open({
+                type: 1,//窗口的层级
+                title: "操作",
+                area: ['500px', '300px'],
+                //如果传过来的数据为空就做新增操作,有数据就做编辑操作,并赋值给content
+                content: data == null ? $("#customer-add-layer").html() : $("#customer-edit-layer").html(),
+                btn: ['提交', '取消'],
+                //点击提交后执行:
+                yes: function (index, layero) {
+                    /*请求后台，做更新或者添加的操作*/
+                    $.ajax({
+                        type: "post",
+                        url: "appInfo/" + (data == null ? 'add' : 'update'),
+                        //将表单作为序列化方式的数据提交
+                        data: data == null ? $("#customer-add-form").serialize() : $("#customer-edit-form").serialize(),
+                        success: function (data) {
+                            //请求后端成功后的回调，data就是后端返回的数据
+                            if (data.status) {
+                                //更新成功
+                                layui.table.reload("customer-table", {});
+                                //关闭弹出层
+                                layer.close(index);
+                            } else {
+                                //不成功
+                                alert(data.message);
+                            }
+                            layer.closeAll("loading");//有一个等待的效果
+                        }
+                    })
+                },
+                /*层弹出后的成功回调方法*/
+                success: function (layero, index) {
+                    //刷新form表单
+                    layui.form.render();
+                    if (data != null) {
+                        layui.form.val("customer-edit-form", data);
+                        layui.form.val("customer-edit-form", {
+                            "state": data.state + ""
+                        });
+                    }
+                }
+            })
+        }
+    }
+</script>
+
+<!--编辑信息的script弹窗-->
+<script type="text/html" id="customer-edit-layer">
+    <form id="customer-edit-form" class="layui-form" lay-filter="customer-edit-form">
+        <div class="layui-form-item">
+            <label class="layui-form-label">编号ID</label>
+            <div class="layui-input-block">
+                <input type="text" name="id" required lay-verify="required" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">公司名称</label>
+            <div class="layui-input-block">
+                <input type="text" name="corpName" required lay-verify="required" autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">应用名称</label>
+            <div class="layui-input-block">
+                <input type="text" name="appName" required lay-verify="required" placeholder="请输入应用名称"
+                       autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">应用标识</label>
+            <div class="layui-input-block">
+                <input type="text" name="appKey" required lay-verify="required" placeholder="请输入应用标识"
+                       autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">密钥</label>
+            <div class="layui-input-block">
+                <input type="password" name="appSecret" required lay-verify="required" placeholder="请输入密钥"
+                       autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">回滚地址</label>
+            <div class="layui-input-block">
+                <input type="url" name="redirectUrl" required lay-verify="required" placeholder="请输入回滚地址"
+                       autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">调用接口限制</label>
+            <div class="layui-input-block">
+                <input type="number" name="limit" required lay-verify="required" autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">描述</label>
+            <div class="layui-input-block">
+                <input type="text" name="description" required lay-verify="required" placeholder="请输入限制次数"
+                       autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">所属客户</label>
+            <div class="layui-input-block">
+                <input type="text" name="cusId" required lay-verify="required" placeholder="请输入限制次数" autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">状态</label>
+            <div class="layui-input-block">
+                <input type="radio" name="state" title="有效" value="1" checked/>
+                <input type="radio" name="state" title="无效" value="0"/>
+            </div>
+        </div>
+    </form>
+</script>
+
+<!--添加的script弹窗-->
+<script type="text/html" id="customer-add-layer">
+    <form id="customer-add-form" class="layui-form" lay-filter="customer-edit-form">
+        <div class="layui-form-item">
+            <label class="layui-form-label">公司名称</label>
+            <div class="layui-input-block">
+                <input type="text" name="corpName" required lay-verify="required" autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">应用名称</label>
+            <div class="layui-input-block">
+                <input type="text" name="appName" required lay-verify="required" placeholder="请输入应用名称"
+                       autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">应用标识</label>
+            <div class="layui-input-block">
+                <input type="text" name="appKey" required lay-verify="required" placeholder="请输入应用标识"
+                       autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">密钥</label>
+            <div class="layui-input-block">
+                <input type="password" name="appSecret" required lay-verify="required" placeholder="请输入密钥"
+                       autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">回滚地址</label>
+            <div class="layui-input-block">
+                <input type="url" name="redirectUrl" required lay-verify="required" placeholder="请输入回滚地址"
+                       autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">调用接口限制</label>
+            <div class="layui-input-block">
+                <input type="number" name="limit" required lay-verify="required" autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">描述</label>
+            <div class="layui-input-block">
+                <input type="text" name="description" required lay-verify="required" placeholder="请输入限制次数"
+                       autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">所属客户</label>
+            <div class="layui-input-block">
+                <input type="text" name="cusId" required lay-verify="required" placeholder="请输入限制次数" autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">状态</label>
+            <div class="layui-input-block">
+                <input type="radio" name="state" title="有效" value="1" checked/>
+                <input type="radio" name="state" title="无效" value="0"/>
+            </div>
+        </div>
+    </form>
+</script>
